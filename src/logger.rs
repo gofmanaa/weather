@@ -2,7 +2,7 @@ use dotenvy::var;
 use std::io;
 use tracing::{info, trace};
 use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
+use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Debug)]
 pub struct LoggerGuard {

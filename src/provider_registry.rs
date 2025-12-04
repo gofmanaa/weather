@@ -1,7 +1,7 @@
 use crate::errors::AppError;
+use crate::weather_providers::WeatherProvider;
 use crate::weather_providers::openweather::OpenWeather;
 use crate::weather_providers::weatherapi::WeatherApi;
-use crate::weather_providers::WeatherProvider;
 use dotenvy::var;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{info, warn};
@@ -75,8 +75,8 @@ pub fn build_registry() -> Result<ProviderRegistry, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::weather_providers::error::ProviderError;
     use crate::weather_providers::WeatherData;
+    use crate::weather_providers::error::ProviderError;
     use async_trait::async_trait;
     use chrono::NaiveDate;
 

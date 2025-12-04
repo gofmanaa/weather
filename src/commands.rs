@@ -73,6 +73,7 @@ pub async fn run(
                 } else {
                     info!("Default provider: {}", settings.default_provider);
                     info!("Available providers: {:?}", wapp.list());
+                    println!("Default provider: {}", settings.default_provider);
                     println!("Available providers: {:?}", wapp.list());
                 }
             }
