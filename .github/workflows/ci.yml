@@ -63,16 +63,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: weather-cli
-            asset_name: weather-cli-linux-amd64
+            artifact_name: weather
+            asset_name: weather-linux-amd64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: weather-cli.exe
-            asset_name: weather-cli-windows-amd64.exe
+            artifact_name: weather.exe
+            asset_name: weather-windows-amd64.exe
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: weather-cli
-            asset_name: weather-cli-macos-amd64
+            artifact_name: weather
+            asset_name: weather-macos-amd64
 
     steps:
       - name: Checkout code
@@ -113,3 +113,5 @@ jobs:
         with:
           files: ./cobertura.xml
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: gofmanaa/weather
