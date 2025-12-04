@@ -4,6 +4,27 @@ use chrono::{DateTime, Local, NaiveDate};
 use openweathermap::CurrentWeather;
 use tracing::debug;
 
+impl From<CurrentWeather> for WeatherData {
+    fn from(w: CurrentWeather) -> Self {
+        let dt = DateTime::from_timestamp(w.dt, 0)
+            .map_or_else(Local::now, |utc| utc.with_timezone(&Local));
+
+        WeatherData {
+            location: w.name,
+            datetime: dt.to_rfc3339(),
+            temp_c: w.main.temp,
+            humidity: w.main.humidity,
+            pressure: w.main.pressure,
+            condition: w
+                .weather
+                .first()
+                .map_or_else(|| "unknown".to_string(), |c| c.description.clone()),
+            wind_kph: w.wind.speed * 3.6,
+            wind_deg: w.wind.deg,
+        }
+    }
+}
+
 pub struct OpenWeather {
     api_key: String,
 }
@@ -30,20 +51,6 @@ impl WeatherProvider for OpenWeather {
             .get_weather(location)
             .map_err(ProviderError::ApiRequest)?;
 
-        let local_dt: DateTime<Local> = match DateTime::from_timestamp(weather_response.dt, 0) {
-            Some(utc_dt) => utc_dt.with_timezone(&Local),
-            None => Local::now(),
-        };
-
-        Ok(WeatherData {
-            location: weather_response.name,
-            datetime: local_dt.to_string(),
-            temp_c: weather_response.main.temp,
-            humidity: weather_response.main.humidity,
-            pressure: weather_response.main.pressure,
-            condition: weather_response.weather[0].description.clone(),
-            wind_kph: weather_response.wind.speed,
-            wind_deg: weather_response.wind.deg,
-        })
+        Ok(WeatherData::from(weather_response))
     }
 }
