@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/gofmanaa/weather/branch/develop/graph/badge.svg)](https://codecov.io/gh/gofmanaa/weather)
+[![codecov](https://codecov.io/gh/gofmanaa/weather/branch/main/graph/badge.svg)](https://codecov.io/gh/gofmanaa/weather)
 
 # weather
 
