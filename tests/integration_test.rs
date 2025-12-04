@@ -52,8 +52,7 @@ fn fail_to_set_not_supported_provider() {
         .arg("configure")
         .arg(not_supported_provider)
         .assert()
-        .stdout(predicates::str::contains(format!(
-            "Provider `{}` not supported",
-            not_supported_provider
+        .stderr(predicates::str::contains(format!(
+            "Provider `{not_supported_provider}` not supported",
         )));
 }

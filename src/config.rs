@@ -1,4 +1,4 @@
-use config::{Config, Environment, File};
+use config::{Config, File};
 use dotenvy::var;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -8,8 +8,10 @@ use std::{fs, path::PathBuf};
 pub enum SettingsError {
     #[error("Failed to load settings: {0}")]
     Load(#[from] config::ConfigError),
+
     #[error("Failed to load .env file: {0}")]
     Env(#[from] dotenvy::Error),
+
     #[error("Failed to save settings: {0}")]
     Save(String),
 }
@@ -20,23 +22,19 @@ pub struct Settings {
 }
 
 pub fn load_settings(config_path: &Path) -> Result<Settings, SettingsError> {
-    dotenvy::dotenv().ok();
+    let mut builder = Config::builder();
 
-    let mut builder =
-        Config::builder().add_source(File::from(PathBuf::from(config_path)).required(false));
+    builder = builder.set_default("default_provider", "weatherapi")?;
 
-    if let Ok(provider) = dotenvy::var("DEFAULT_PROVIDER") {
+    if config_path.exists() {
+        builder = builder.add_source(File::from(PathBuf::from(config_path)).required(false));
+    }
+
+    if let Ok(provider) = var("DEFAULT_PROVIDER") {
         builder = builder.set_override("default_provider", provider)?;
     }
 
-    let config = builder
-        .add_source(
-            Environment::with_prefix("CONF")
-                .separator("_")
-                .try_parsing(true),
-        )
-        .build()?;
-
+    let config = builder.build()?;
     let settings = config
         .try_deserialize::<Settings>()
         .map_err(SettingsError::Load)?;
@@ -44,7 +42,7 @@ pub fn load_settings(config_path: &Path) -> Result<Settings, SettingsError> {
     Ok(settings)
 }
 
-pub fn save_settings(settings: &Settings, path: PathBuf) -> Result<(), SettingsError> {
+pub fn save_settings(settings: &Settings, path: &PathBuf) -> Result<(), SettingsError> {
     let toml_settings =
         toml::to_string_pretty(settings).map_err(|e| SettingsError::Save(e.to_string()))?;
     fs::write(path, toml_settings).map_err(|e| SettingsError::Save(e.to_string()))?;
@@ -52,6 +50,69 @@ pub fn save_settings(settings: &Settings, path: PathBuf) -> Result<(), SettingsE
     Ok(())
 }
 
-pub fn try_apikey_from_env(provider_name: &str) -> Result<String, SettingsError> {
-    var(format!("{}_API_KEY", provider_name)).map_err(SettingsError::Env)
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    #[test]
+    #[serial_test::serial]
+    fn test_load_settings_no_file() {
+        let test_provider_name = "test_provider";
+        temp_env::with_var("DEFAULT_PROVIDER", Some(test_provider_name), || {
+            let s = match load_settings(Path::new("not_exist_file.toml")) {
+                Ok(s) => s,
+                Err(e) => panic!("{}", e),
+            };
+            assert_eq!(s.default_provider, test_provider_name);
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_load_settings_with_dotenv() {
+        let env_path = Path::new("tests/.env.test");
+        fs::create_dir_all("tests").unwrap();
+        let test_provider_name = "test_openweather";
+        {
+            let mut file = fs::File::create(env_path).unwrap();
+            writeln!(file, "DEFAULT_PROVIDER={}", test_provider_name).unwrap();
+        }
+        // Dotenv interferes with other tests
+        temp_env::with_var("DEFAULT_PROVIDER", None::<String>, || {
+            dotenvy::from_filename(env_path).unwrap();
+
+            let s = match load_settings(Path::new("not_exist_file.toml")) {
+                Ok(s) => s,
+                Err(e) => {
+                    fs::remove_file(env_path).unwrap();
+                    panic!("{}", e)
+                }
+            };
+
+            assert_eq!(s.default_provider, test_provider_name);
+
+            fs::remove_file(env_path).unwrap();
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_load_settings_from_file() {
+        let settings_path = Path::new("tests/settings_test.toml");
+        fs::create_dir_all("tests").unwrap();
+        let test_provider_name = "test_from_storage_provider";
+        {
+            let mut file = fs::File::create(settings_path).unwrap();
+            writeln!(file, r#"default_provider = "{}""#, test_provider_name).unwrap();
+        }
+        let s = match load_settings(settings_path) {
+            Ok(s) => s,
+            Err(e) => {
+                fs::remove_file(settings_path).unwrap();
+                panic!("{}", e)
+            }
+        };
+        assert_eq!(s.default_provider, test_provider_name);
+        fs::remove_file(settings_path).unwrap();
+    }
 }

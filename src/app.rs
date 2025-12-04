@@ -18,21 +18,27 @@ where
 
     pub async fn run(
         &self,
-        provider: &str,
+        provider_name: &str,
         city: &str,
         date: Option<NaiveDate>,
     ) -> Result<WeatherData, AppError> {
-        let provider = match self.manager.get(provider) {
-            Some(provider) => provider,
-            None => Err(AppError::InvalidProvider(format!(
-                "Provider '{}' not found",
-                provider
-            )))?,
+        let Some(provider) = self.manager.get(provider_name) else {
+            return Err(AppError::InvalidProvider(format!(
+                "Provider '{provider_name}' not found"
+            )));
         };
 
         provider
             .fetch(city, date)
             .await
             .map_err(|e| AppError::InvalidDate(e.to_string()))
+    }
+
+    pub fn provider_exist(&self, name: &str) -> bool {
+        self.manager.get(name).is_some()
+    }
+
+    pub fn list(&self) -> Vec<String> {
+        self.manager.list()
     }
 }

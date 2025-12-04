@@ -5,6 +5,9 @@ pub enum ProviderError {
     #[error("API request failed: {0}")]
     Request(#[from] reqwest::Error),
 
+    #[error("API returned an error: {0}")]
+    ApiRequest(String),
+
     #[error("Failed to parse API response: {0}")]
     Parse(#[from] serde_json::Error),
 
@@ -13,7 +16,4 @@ pub enum ProviderError {
 
     #[error("Location '{0}' is invalid or not found")]
     InvalidLocation(String),
-
-    #[error("An unexpected error occurred: {0}")]
-    Unexpected(String),
 }
