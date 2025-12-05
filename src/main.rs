@@ -2,7 +2,6 @@ mod commands;
 mod config;
 mod errors;
 
-mod provider_manager;
 mod provider_registry;
 
 mod app;
@@ -12,7 +11,6 @@ mod weather_providers;
 use crate::app::WeatherApp;
 use crate::commands::run;
 use crate::logger::init_logger;
-use crate::provider_manager::ProviderManager;
 use crate::provider_registry::build_registry;
 use crate::{config::load_settings, errors::AppError};
 use clap::Parser;
@@ -21,6 +19,7 @@ use tracing::{info, trace};
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
+    // add ratatui TUI
     let _logger_guard = init_logger();
     let _ = dotenvy::dotenv().ok();
     info!("App started");
@@ -31,9 +30,8 @@ async fn main() -> Result<(), AppError> {
 
     trace!("Settings {:?}", settings);
 
-    let registry = build_registry()?;
-    let manager = ProviderManager::new(registry);
-    let app = WeatherApp::new(manager);
+    let registry = build_registry(&settings)?;
+    let app = WeatherApp::new(registry);
 
     run(cli, app, settings).await
 }

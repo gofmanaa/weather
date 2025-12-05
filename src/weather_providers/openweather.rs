@@ -1,24 +1,23 @@
 use crate::weather_providers::error::ProviderError;
 use crate::weather_providers::{WeatherData, WeatherProvider};
-use chrono::{DateTime, Local, NaiveDate};
+use chrono::{DateTime, NaiveDate, Utc};
 use openweathermap::CurrentWeather;
 use tracing::debug;
 
 impl From<CurrentWeather> for WeatherData {
     fn from(w: CurrentWeather) -> Self {
-        let dt = DateTime::from_timestamp(w.dt, 0)
-            .map_or_else(Local::now, |utc| utc.with_timezone(&Local));
+        let dt = DateTime::from_timestamp(w.dt, 0).map_or_else(Utc::now, |utc| utc);
 
         WeatherData {
             location: w.name,
-            datetime: dt.to_rfc3339(),
+            datetime: dt,
             temp_c: w.main.temp,
             humidity: w.main.humidity,
             pressure: w.main.pressure,
             condition: w
                 .weather
                 .first()
-                .map_or_else(|| "unknown".to_string(), |c| c.description.clone()),
+                .map_or("unknown".to_string(), |c| c.description.clone()),
             wind_kph: w.wind.speed * 3.6,
             wind_deg: w.wind.deg,
         }
@@ -30,8 +29,12 @@ pub struct OpenWeather {
 }
 
 impl OpenWeather {
-    pub fn new(api_key: String) -> Self {
-        Self { api_key }
+    pub fn new(api_key: Option<String>) -> Result<Self, ProviderError> {
+        let api_key = api_key.ok_or_else(|| {
+            ProviderError::InvalidApiKey("OpenWeather requires API_KEY".to_string())
+        })?;
+
+        Ok(Self { api_key })
     }
 
     pub fn get_weather(&self, location: &str) -> Result<CurrentWeather, String> {

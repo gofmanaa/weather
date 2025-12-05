@@ -9,11 +9,17 @@ pub enum ProviderError {
     ApiRequest(String),
 
     #[error("Failed to parse API response: {0}")]
-    Parse(#[from] serde_json::Error),
+    ParseResponse(#[from] serde_json::Error),
+
+    #[error("Failed to parse date/time: {0}")]
+    ParseDateTime(String),
 
     #[error("API key is missing or invalid for {0}")]
     InvalidApiKey(String),
 
     #[error("Location '{0}' is invalid or not found")]
     InvalidLocation(String),
+
+    #[error("Provider error '{0}'")]
+    Error(String),
 }
