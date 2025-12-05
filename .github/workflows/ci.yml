@@ -115,3 +115,26 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: gofmanaa/weather
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Cache RustSec DB
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/advisory-db
+          key: advisory-db
+
+      - name: Run cargo audit
+        run: cargo audit --json

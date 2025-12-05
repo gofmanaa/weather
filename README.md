@@ -1,4 +1,9 @@
+## Status
+
+![CI](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/gofmanaa/weather/branch/main/graph/badge.svg)](https://codecov.io/gh/gofmanaa/weather)
+![Security Audit](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg?job=audit)
+![Clippy](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg?job=test)
 
 # weather
 
