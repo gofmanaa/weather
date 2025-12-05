@@ -3,7 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 
 fn setup_test_config(path: &PathBuf) {
-    let config_content = r#"default_provider = "weatherapi""#.to_string();
+    let config_content = r#"
+    default_provider = "weatherapi"
+        [providers.weatherapi]
+    api_key = "some_test_api_key"
+        [providers.openweather]
+    api_key = "some_test_api_key"
+    "#
+    .to_string();
     fs::write(path, config_content).unwrap();
 }
 

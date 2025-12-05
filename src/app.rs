@@ -1,44 +1,44 @@
 use crate::errors::AppError;
-use crate::provider_manager::ProviderManager;
-use crate::provider_registry::ProviderLookup;
+use crate::provider_registry::ProviderRegistry;
 use crate::weather_providers::WeatherData;
 use chrono::NaiveDate;
 
-pub struct WeatherApp<L> {
-    manager: ProviderManager<L>,
+/// App for querying weather providers.
+pub struct WeatherApp {
+    registry: ProviderRegistry,
 }
 
-impl<L> WeatherApp<L>
-where
-    L: ProviderLookup,
-{
-    pub fn new(manager: ProviderManager<L>) -> Self {
-        Self { manager }
+impl WeatherApp {
+    pub fn new(manager: ProviderRegistry) -> Self {
+        Self { registry: manager }
     }
 
+    /// Fetch weather for a provider, location, and optional date.
     pub async fn run(
         &self,
         provider_name: &str,
-        city: &str,
+        location: &str,
         date: Option<NaiveDate>,
     ) -> Result<WeatherData, AppError> {
-        let Some(provider) = self.manager.get(provider_name) else {
+        let Some(provider) = self.registry.get(provider_name) else {
             return Err(AppError::InvalidProvider(format!(
                 "Provider '{provider_name}' not found"
             )));
         };
 
         provider
-            .fetch(city, date)
+            .fetch(location, date)
             .await
-            .map_err(|e| AppError::InvalidDate(e.to_string()))
+            .map_err(|e| AppError::InvalidDate(format!("Failed to fetch weather: {e}")))
     }
 
+    /// Check if a provider exists.
     pub fn provider_exist(&self, name: &str) -> bool {
-        self.manager.get(name).is_some()
+        self.registry.get(name).is_some()
     }
 
+    /// List all provider names.
     pub fn list(&self) -> Vec<String> {
-        self.manager.list()
+        self.registry.list_providers()
     }
 }

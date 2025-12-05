@@ -1,12 +1,11 @@
 use crate::app::WeatherApp;
 use crate::config::save_settings;
 use crate::errors::AppError;
-use crate::provider_registry::ProviderRegistry;
 use crate::weather_providers::WeatherData;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, arg_required_else_help = true)]
@@ -51,10 +50,11 @@ fn parse_datetime(s: &str) -> Result<NaiveDate, AppError> {
 
 pub async fn run(
     cli: Cli,
-    wapp: WeatherApp<ProviderRegistry>,
+    wapp: WeatherApp,
     mut settings: crate::config::Settings,
 ) -> Result<(), AppError> {
     let config_path = cli.config_path.unwrap_or_default();
+
     if let Some(command) = cli.command {
         match command {
             Commands::Configure { provider } => {
@@ -66,6 +66,7 @@ pub async fn run(
                         save_settings(&settings, &config_path).map_err(AppError::Config)?;
                         println!("Default provider saved to {}", config_path.display());
                     } else {
+                        warn!("Provider `{provider}` not supported");
                         eprintln!("Provider `{provider}` not supported");
                     }
                 } else {
@@ -90,48 +91,5 @@ pub async fn run(
 }
 
 fn display_weather_info(response: &WeatherData, provider: &str) {
-    let description = &response.condition;
-    let datetime = &response.datetime;
-    let temperature = response.temp_c;
-    let humidity = response.humidity;
-    let pressure = response.pressure;
-    let wind_speed = response.wind_kph;
-    let wind_deg = response.wind_deg;
-
-    let weather_text = format!(
-        "Weather in {}: {} {}
-> DateTeme: {},
-> Temperature: {:.1}°C,
-> Humidity: {:.1} %,
-> Pressure: {:.1} hPa,
-> Wind Speed: {:.1} k/h
-> Wind Degree: {:.1}°
-Provider: {}",
-        response.location,
-        description,
-        get_temperature_emoji(temperature),
-        datetime,
-        temperature,
-        humidity,
-        pressure,
-        wind_speed,
-        wind_deg,
-        provider.to_uppercase(),
-    );
-
-    println!("{weather_text}");
-}
-
-fn get_temperature_emoji(temperature: f64) -> &'static str {
-    if temperature < 0.0 {
-        "❄️"
-    } else if (0.0..10.0).contains(&temperature) {
-        "☁️"
-    } else if (10.0..20.0).contains(&temperature) {
-        "⛅"
-    } else if (20.0..30.0).contains(&temperature) {
-        "🌤️"
-    } else {
-        "🔥"
-    }
+    println!("{}\nProvider: {}", response, provider.to_uppercase());
 }
