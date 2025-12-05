@@ -6,7 +6,7 @@ use crate::weather_providers::WeatherData;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, arg_required_else_help = true)]
@@ -64,19 +64,15 @@ pub async fn run(
                     if wapp.provider_exist(&provider) {
                         settings.default_provider = provider;
                         save_settings(&settings, &config_path).map_err(AppError::Config)?;
-                        info!("Default provider saved to {}", config_path.display());
                         println!("Default provider saved to {}", config_path.display());
                     } else {
-                        error!("Provider `{provider}` not supported");
                         eprintln!("Provider `{provider}` not supported");
                     }
                 } else {
-                    info!("Default provider: {}", settings.default_provider);
-                    info!("Available providers: {:?}", wapp.list());
                     println!("Default provider: {}", settings.default_provider);
                     println!("Available providers: {:?}", wapp.list());
                 }
-            }
+            },
             Commands::Get { address, date } => {
                 debug!("Cli address: {}", address);
                 debug!("Cli date: {:?}", date);
@@ -86,7 +82,7 @@ pub async fn run(
                 debug!("{:#?}", res);
 
                 display_weather_info(&res, &settings.default_provider);
-            }
+            },
         }
     }
 

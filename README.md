@@ -1,4 +1,9 @@
+## Status
+
+![CI](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/gofmanaa/weather/branch/main/graph/badge.svg)](https://codecov.io/gh/gofmanaa/weather)
+![Security Audit](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg?job=audit)
+![Clippy](https://github.com/gofmanaa/weather/actions/workflows/ci.yml/badge.svg?job=test)
 
 # weather
 
@@ -90,4 +95,27 @@ Example:
 ```bash
 weather get London,UK
 weather get "New York,US" --date 2025-12-04
+```
+
+## Docker
+
+```bash
+docker buildx build --load -t weather .
+docker run -it -v $(pwd)/.env:/app/.env --rm weather configure
+docker run -it -v $(pwd)/.env:/app/.env --rm weather get Kharkiv,Ua
+```
+
+example output:
+
+```bash
+docker run -it -v $(pwd)/.env:/app/.env --rm weather get Kharkiv,Ua
+
+Weather in Kharkiv,Ua: Sunny ☁️
+> DateTeme: 2025-12-05 11:45,
+> Temperature: 2.1°C,
+> Humidity: 67.0 %,
+> Pressure: 1028.0 hPa,
+> Wind Speed: 10.4 k/h
+> Wind Degree: 95.0°
+Provider: WEATHERAPI
 ```
