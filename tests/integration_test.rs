@@ -16,7 +16,7 @@ fn setup_test_config(path: &PathBuf) {
 
 #[test]
 fn success_set_default_provider() {
-    let config_path = PathBuf::from("tests/test_settings.toml");
+    let config_path = PathBuf::from("tests/test_settings1.toml");
     setup_test_config(&config_path);
 
     let mut cmd = cargo::cargo_bin_cmd!();
@@ -41,25 +41,32 @@ fn success_set_default_provider() {
 
 #[test]
 fn success_list_supported_providers() {
+    let config_path = PathBuf::from("tests/test_settings2.toml");
+    setup_test_config(&config_path);
     let mut cmd = cargo::cargo_bin_cmd!();
-    cmd.env("OPENWEATHER_API_KEY", "test_api_key")
-        .env("WEATHERAPI_API_KEY", "test_api_key")
+    cmd.arg("--config-path")
+        .arg(&config_path)
         .arg("configure")
         .assert()
         .stdout(predicates::str::contains("Available providers:"))
         .stdout(predicates::str::contains("openweather"))
         .stdout(predicates::str::contains("weatherapi"));
+    fs::remove_file(config_path).unwrap();
 }
 
 #[test]
 fn fail_to_set_not_supported_provider() {
+    let config_path = PathBuf::from("tests/test_settings3.toml");
+    setup_test_config(&config_path);
     let mut cmd = cargo::cargo_bin_cmd!();
     let not_supported_provider = "not_supported_provider";
-    cmd.env("OPENWEATHER_API_KEY", "test_api_key")
+    cmd.arg("--config-path")
+        .arg(&config_path)
         .arg("configure")
         .arg(not_supported_provider)
         .assert()
         .stderr(predicates::str::contains(format!(
             "Provider `{not_supported_provider}` not supported",
         )));
+    fs::remove_file(config_path).unwrap();
 }
