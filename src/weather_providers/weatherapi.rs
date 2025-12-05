@@ -227,7 +227,7 @@ mod tests {
         let result = api.get_weather("", None).await;
 
         match result {
-            Err(ProviderError::InvalidLocation(_)) => {}
+            Err(ProviderError::InvalidLocation(_)) => {},
             _ => panic!("expected InvalidLocation error"),
         }
     }
@@ -238,7 +238,7 @@ mod tests {
         let result = api.get_weather("Porto Alegre", None).await;
 
         match result {
-            Err(ProviderError::InvalidApiKey(_)) => {}
+            Err(ProviderError::InvalidApiKey(_)) => {},
             _ => panic!("expected InvalidApiKey error"),
         }
     }

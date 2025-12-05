@@ -19,7 +19,7 @@ pub fn init_logger() -> LoggerGuard {
         .with_target(false)
         .with_level(true)
         .without_time()
-        .with_filter(EnvFilter::try_from_default_env().unwrap_or(EnvFilter::new("debug")));
+        .with_filter(EnvFilter::try_from_default_env().unwrap_or(EnvFilter::new("warn")));
 
     tracing_subscriber::registry().with(std_out_layer).init();
 

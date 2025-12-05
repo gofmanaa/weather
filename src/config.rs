@@ -86,7 +86,7 @@ mod tests {
                 Err(e) => {
                     fs::remove_file(env_path).unwrap();
                     panic!("{}", e)
-                }
+                },
             };
 
             assert_eq!(s.default_provider, test_provider_name);
@@ -110,7 +110,7 @@ mod tests {
             Err(e) => {
                 fs::remove_file(settings_path).unwrap();
                 panic!("{}", e)
-            }
+            },
         };
         assert_eq!(s.default_provider, test_provider_name);
         fs::remove_file(settings_path).unwrap();
