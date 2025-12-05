@@ -42,3 +42,43 @@ impl WeatherApp {
         self.registry.list_providers()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::weather_providers::WeatherProvider;
+    use crate::weather_providers::error::ProviderError;
+    use async_trait::async_trait;
+
+    #[tokio::test]
+    async fn weather_app_empty_registry() {
+        let wapp = WeatherApp::new(ProviderRegistry::new());
+        assert!(wapp.list().is_empty());
+
+        let res = wapp.run("", "location", None).await;
+        assert!(res.is_err());
+    }
+
+    struct MockProvider;
+
+    #[async_trait]
+    impl WeatherProvider for MockProvider {
+        async fn fetch(
+            &self,
+            _location: &str,
+            _date: Option<NaiveDate>,
+        ) -> Result<WeatherData, ProviderError> {
+            Ok(WeatherData::default())
+        }
+    }
+    #[tokio::test]
+    async fn weather_app() {
+        let mut register = ProviderRegistry::new();
+        register.register("something", MockProvider);
+        let wapp = WeatherApp::new(register);
+        assert!(!wapp.list().is_empty());
+
+        let res = wapp.run("something", "location", None).await;
+        assert!(res.is_ok());
+    }
+}

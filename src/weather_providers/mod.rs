@@ -9,7 +9,7 @@ pub mod weatherapi;
 use crate::weather_providers::error::ProviderError;
 
 /// Represents the weather information for a specific location.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct WeatherData {
     /// The name of the city or location.
     pub location: String,

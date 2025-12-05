@@ -9,7 +9,7 @@ pub enum ProviderError {
     ApiRequest(String),
 
     #[error("Failed to parse API response: {0}")]
-    Parse(#[from] serde_json::Error),
+    ParseResponse(#[from] serde_json::Error),
 
     #[error("Failed to parse date/time: {0}")]
     ParseDateTime(String),

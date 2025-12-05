@@ -124,7 +124,7 @@ mod tests {
             providers.insert(
                 test_provider_name.to_string(),
                 ProviderSettings {
-                    api_key: "dummy".to_string(),
+                    api_key: "dummy_api_key".to_string(),
                 },
             );
             let settings = Settings {
@@ -136,6 +136,8 @@ mod tests {
 
             let s = load_settings(tmp_path).unwrap();
             assert_eq!(s.default_provider, test_provider_name);
+            assert_eq!(s.providers.len(), 1);
+            assert_eq!(s.providers["test_openweather"].api_key, "dummy_api_key");
 
             fs::remove_file(tmp_path).unwrap();
             fs::remove_file(env_path).unwrap();
@@ -158,6 +160,11 @@ mod tests {
 
         let s = load_settings(settings_path).unwrap();
         assert_eq!(s.default_provider, test_provider_name);
+        assert_eq!(s.providers.len(), 1);
+        assert_eq!(
+            s.providers["test_from_storage_provider"].api_key,
+            "dummy_api_key"
+        );
 
         fs::remove_file(settings_path).unwrap();
     }

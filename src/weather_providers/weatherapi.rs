@@ -3,7 +3,6 @@ use crate::weather_providers::{WeatherData, WeatherProvider};
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use tracing::debug;
 
@@ -73,9 +72,6 @@ pub struct WeatherCondition {
 pub struct ConditionFields {
     pub text: String,
     pub icon: String,
-    #[serde(flatten)]
-    #[allow(dead_code)]
-    extra: HashMap<String, serde_json::Value>,
 }
 
 impl TryFrom<WeatherResponse> for WeatherData {
@@ -129,6 +125,7 @@ fn parse_local_datetime(date_str: &str) -> Result<DateTime<Utc>, ProviderError> 
     Ok(DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc))
 }
 
+/// Implementation fo `WeatherApi` '<https://www.weatherapi.com/>'
 pub struct WeatherApi {
     api_key: String,
     base_url: Url,
