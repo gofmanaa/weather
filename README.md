@@ -37,7 +37,19 @@ cargo install --git https://github.com/gofmanaa/weather.git
 
 ### Configuration
 
-Before using the CLI, copy the example .env file and add your API keys:
+Before using the CLI, insert the API keys to into settings.toml:
+
+```text
+default_provider = "weatherapi"
+
+[providers.weatherapi]
+api_key = "YourApiKey"
+
+[providers.openweather]
+api_key = "YourApiKey"
+```
+
+You can overwrite API_KEY with the .env file and add your API keys:
 
 ```bash
 cp env.example .env
@@ -48,6 +60,7 @@ Edit .env and set your keys:
 ```text
 WEATHERAPI_API_KEY=PASTE_YOUR_API_KEY
 OPENWEATHER_API_KEY=PASTE_YOUR_API_KEY
+DEFAULT_PROVIDER=openweather
 ```
 
 The CLI will automatically load these keys using dotenvy.

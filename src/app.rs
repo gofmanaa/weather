@@ -1,7 +1,7 @@
 use crate::errors::AppError;
 use crate::provider_registry::ProviderRegistry;
 use crate::weather_providers::WeatherData;
-use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 
 /// App for querying weather providers.
 pub struct WeatherApp {
@@ -18,7 +18,7 @@ impl WeatherApp {
         &self,
         provider_name: &str,
         location: &str,
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     ) -> Result<WeatherData, AppError> {
         let Some(provider) = self.registry.get(provider_name) else {
             return Err(AppError::InvalidProvider(format!(
@@ -66,7 +66,7 @@ mod tests {
         async fn fetch(
             &self,
             _location: &str,
-            _date: Option<NaiveDate>,
+            _date: Option<NaiveDateTime>,
         ) -> Result<WeatherData, ProviderError> {
             Ok(WeatherData::default())
         }

@@ -5,6 +5,7 @@ use crate::weather_providers::WeatherData;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::str::FromStr;
 use tracing::{debug, info, warn};
 
 #[derive(Debug, Parser)]
@@ -13,8 +14,17 @@ pub struct Cli {
     #[command(subcommand)]
     pub(crate) command: Option<Commands>,
 
-    #[arg(short, long, value_name = "CONF_FILE", default_value = "settings.toml")]
-    pub(crate) config_path: Option<PathBuf>,
+    #[arg(
+        short,
+        long,
+        value_name = "CONF_FILE",
+        default_value = default_settings_path().into_os_string()
+    )]
+    pub(crate) config_path: PathBuf,
+}
+
+pub fn default_settings_path() -> PathBuf {
+    PathBuf::from_str("settings.toml").expect("Could not find default settings.toml")
 }
 
 #[derive(Debug, Subcommand)]
@@ -25,24 +35,24 @@ pub enum Commands {
     Get {
         address: String,
         #[arg(long, value_parser = parse_datetime)]
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     },
 }
 
-fn parse_datetime(s: &str) -> Result<NaiveDate, AppError> {
+fn parse_datetime(s: &str) -> Result<NaiveDateTime, AppError> {
     // RFC3339 format
     if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-        return Ok(dt.with_timezone(&Local).date_naive());
+        return Ok(dt.with_timezone(&Local).naive_local());
     }
 
     //  "YYYY-MM-DD HH:MM:SS"
-    if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S") {
-        return Ok(ndt.date());
+    if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M") {
+        return Ok(ndt);
     }
 
     //  "YYYY-MM-DD"
     if let Ok(date) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-        return Ok(date);
+        return Ok(date.and_hms_opt(0, 0, 0).unwrap());
     }
 
     Err(AppError::InvalidDate(s.to_string()))
@@ -53,7 +63,7 @@ pub async fn run(
     wapp: WeatherApp,
     mut settings: crate::config::Settings,
 ) -> Result<(), AppError> {
-    let config_path = cli.config_path.unwrap_or_default();
+    let config_path = cli.config_path;
 
     if let Some(command) = cli.command {
         match command {

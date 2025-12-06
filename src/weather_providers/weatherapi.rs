@@ -1,10 +1,12 @@
 use crate::weather_providers::error::ProviderError;
 use crate::weather_providers::{WeatherData, WeatherProvider};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use tracing::debug;
+use tracing::{debug, info};
+
+//https://api.weatherapi.com/v1/forecast.json?key=***&q=Porto,PT&days=1&aqi=no&alerts=yes
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -16,6 +18,11 @@ pub enum WeatherResponse {
     History {
         location: Location,
         forecast: Forecast,
+    },
+    Forecast {
+        forecast: Forecast,
+        location: Location,
+        current: WeatherCondition,
     },
 }
 
@@ -114,6 +121,17 @@ impl TryFrom<WeatherResponse> for WeatherData {
                     wind_deg: first_hour.wind_degree,
                 })
             },
+            WeatherResponse::Forecast {
+                forecast,
+                location,
+                current,
+            } => {
+                debug!("{:?}", &forecast);
+                debug!("{:?}", &location);
+                debug!("{:?}", &current);
+
+                Ok(WeatherData::default())
+            },
         }
     }
 }
@@ -152,7 +170,7 @@ impl WeatherApi {
     async fn get_weather(
         &self,
         location: impl AsRef<str>,
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     ) -> Result<WeatherResponse, ProviderError> {
         debug!(
             "weatherapi location: {}, date: {:?}",
@@ -176,13 +194,26 @@ impl WeatherApi {
                 )
             },
             |date| {
-                format!(
-                    "{}v1/history.json?key={}&q={}&aqi=no&dt={}",
-                    self.base_url,
-                    self.api_key,
-                    location.as_ref(),
-                    date
-                )
+                let now = Local::now().naive_local();
+
+                if date > now {
+                    info!("forecast");
+                    format!(
+                        "{}v1/forecast.json?key={}&q={}&days=1&aqi=no&alerts=no",
+                        self.base_url,
+                        self.api_key,
+                        location.as_ref(),
+                    )
+                } else {
+                    info!("history");
+                    format!(
+                        "{}v1/history.json?key={}&q={}&aqi=no&dt={}",
+                        self.base_url,
+                        self.api_key,
+                        location.as_ref(),
+                        date
+                    )
+                }
             },
         );
 
@@ -204,7 +235,7 @@ impl WeatherProvider for WeatherApi {
     async fn fetch(
         &self,
         location: &str,
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     ) -> Result<WeatherData, ProviderError> {
         let weather = self.get_weather(location, date).await?;
         let res = WeatherData::try_from(weather)

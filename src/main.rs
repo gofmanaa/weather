@@ -9,7 +9,8 @@ mod logger;
 mod weather_providers;
 
 use crate::app::WeatherApp;
-use crate::commands::run;
+use crate::commands::{default_settings_path, run};
+use crate::config::init_settings_file;
 use crate::logger::init_logger;
 use crate::provider_registry::build_registry;
 use crate::{config::load_settings, errors::AppError};
@@ -25,8 +26,9 @@ async fn main() -> Result<(), AppError> {
     info!("App started");
     let cli = Cli::parse();
 
-    let settings = load_settings(cli.config_path.clone().unwrap_or_default().as_path())
-        .map_err(AppError::Config)?;
+    let _ = init_settings_file(&default_settings_path());
+
+    let settings = load_settings(cli.config_path.clone().as_path()).map_err(AppError::Config)?;
 
     trace!("Settings {:?}", settings);
 

@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 chrono = "0.4.42"
-clap = { version = "4.5.53", features = ["derive", "env"] }
+clap = { version = "4.5.53", features = ["derive", "string"] }
 config = "0.15.19"
 dotenvy = "0.15.7"
 openweathermap = "0.2.4"
