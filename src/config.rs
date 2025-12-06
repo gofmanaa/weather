@@ -3,7 +3,8 @@ use dotenvy::var;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use std::{fs, path::PathBuf};
+use std::{fs, io, path::PathBuf};
+use tracing::debug;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SettingsError {
@@ -38,11 +39,29 @@ impl Settings {
     }
 }
 
+pub fn init_settings_file(config_path: &Path) -> io::Result<()> {
+    if !config_path.exists() {
+        fs::write(
+            config_path,
+            r#"default_provider = "weatherapi"
+
+[providers.weatherapi]
+api_key = "YourApiKey"
+
+[providers.openweather]
+api_key = "YourApiKey""#,
+        )?;
+    }
+
+    Ok(())
+}
+
 pub fn load_settings(config_path: &Path) -> Result<Settings, SettingsError> {
     let mut builder = Config::builder();
 
     builder = builder.set_default("default_provider", "weatherapi")?;
 
+    debug!("{:#?}", config_path);
     if config_path.exists() {
         builder = builder.add_source(File::from(PathBuf::from(config_path)).required(false));
     }

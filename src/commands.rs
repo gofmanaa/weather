@@ -5,6 +5,7 @@ use crate::weather_providers::WeatherData;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::str::FromStr;
 use tracing::{debug, info, warn};
 
 #[derive(Debug, Parser)]
@@ -13,8 +14,17 @@ pub struct Cli {
     #[command(subcommand)]
     pub(crate) command: Option<Commands>,
 
-    #[arg(short, long, value_name = "CONF_FILE", default_value = "settings.toml")]
-    pub(crate) config_path: Option<PathBuf>,
+    #[arg(
+        short,
+        long,
+        value_name = "CONF_FILE",
+        default_value = default_settings_path().into_os_string()
+    )]
+    pub(crate) config_path: PathBuf,
+}
+
+pub fn default_settings_path() -> PathBuf {
+    PathBuf::from_str("settings.toml").expect("Could not find default settings.toml")
 }
 
 #[derive(Debug, Subcommand)]
@@ -53,7 +63,7 @@ pub async fn run(
     wapp: WeatherApp,
     mut settings: crate::config::Settings,
 ) -> Result<(), AppError> {
-    let config_path = cli.config_path.unwrap_or_default();
+    let config_path = cli.config_path;
 
     if let Some(command) = cli.command {
         match command {

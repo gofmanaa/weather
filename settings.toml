@@ -1,0 +1,7 @@
+default_provider = "weatherapi"
+
+[providers.weatherapi]
+api_key = "fcdfe8b5177a4c4e920161106250212"
+
+[providers.openweather]
+api_key = "YourApiKey"

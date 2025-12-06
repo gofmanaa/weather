@@ -1,8 +1,8 @@
 use crate::config::Settings;
 use crate::errors::AppError;
-use crate::weather_providers::WeatherProvider;
 use crate::weather_providers::openweather::OpenWeather;
 use crate::weather_providers::weatherapi::WeatherApi;
+use crate::weather_providers::WeatherProvider;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{error, info, warn};
 
@@ -71,20 +71,14 @@ pub fn build_registry(settings: &Settings) -> Result<ProviderRegistry, AppError>
         }
     }
 
-    if registry.list_providers().is_empty() {
-        return Err(AppError::MissingApiKey(
-            "No valid providers configured".to_string(),
-        ));
-    }
-
     Ok(registry)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::weather_providers::WeatherData;
     use crate::weather_providers::error::ProviderError;
+    use crate::weather_providers::WeatherData;
     use async_trait::async_trait;
     use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
 
