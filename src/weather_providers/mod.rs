@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::{DateTime, Local, NaiveDate, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use std::fmt::{Display, Formatter};
 
 pub mod error;
@@ -62,6 +62,6 @@ pub trait WeatherProvider: Send + Sync {
     async fn fetch(
         &self,
         location: &str,
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     ) -> Result<WeatherData, ProviderError>;
 }

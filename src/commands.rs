@@ -35,24 +35,24 @@ pub enum Commands {
     Get {
         address: String,
         #[arg(long, value_parser = parse_datetime)]
-        date: Option<NaiveDate>,
+        date: Option<NaiveDateTime>,
     },
 }
 
-fn parse_datetime(s: &str) -> Result<NaiveDate, AppError> {
+fn parse_datetime(s: &str) -> Result<NaiveDateTime, AppError> {
     // RFC3339 format
     if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-        return Ok(dt.with_timezone(&Local).date_naive());
+        return Ok(dt.with_timezone(&Local).naive_local());
     }
 
     //  "YYYY-MM-DD HH:MM:SS"
-    if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S") {
-        return Ok(ndt.date());
+    if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M") {
+        return Ok(ndt);
     }
 
     //  "YYYY-MM-DD"
     if let Ok(date) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-        return Ok(date);
+        return Ok(date.and_hms_opt(0, 0, 0).unwrap());
     }
 
     Err(AppError::InvalidDate(s.to_string()))

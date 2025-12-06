@@ -1,8 +1,8 @@
 use crate::config::Settings;
 use crate::errors::AppError;
+use crate::weather_providers::WeatherProvider;
 use crate::weather_providers::openweather::OpenWeather;
 use crate::weather_providers::weatherapi::WeatherApi;
-use crate::weather_providers::WeatherProvider;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{error, info, warn};
 
@@ -77,10 +77,10 @@ pub fn build_registry(settings: &Settings) -> Result<ProviderRegistry, AppError>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::weather_providers::error::ProviderError;
     use crate::weather_providers::WeatherData;
+    use crate::weather_providers::error::ProviderError;
     use async_trait::async_trait;
-    use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
+    use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 
     #[derive(Debug, PartialEq)]
     struct MockProvider {}
@@ -90,13 +90,10 @@ mod tests {
         async fn fetch(
             &self,
             location: &str,
-            date: Option<NaiveDate>,
+            date: Option<NaiveDateTime>,
         ) -> Result<WeatherData, ProviderError> {
             let datetime = date
-                .map(|d| {
-                    let ndt = d.and_hms_opt(12, 13, 0).unwrap();
-                    DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc)
-                })
+                .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
                 .unwrap();
 
             Ok(WeatherData {
@@ -130,13 +127,12 @@ mod tests {
         reg.register("mock", MockProvider {});
 
         let provider = reg.get("mock").unwrap();
+        let expected_datetime = Utc.with_ymd_and_hms(2026, 1, 1, 12, 13, 0).unwrap();
+        let datetime = expected_datetime.naive_utc();
 
-        let date = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
-        let result = provider.fetch("London", Some(date)).await.unwrap();
+        let result = provider.fetch("London", Some(datetime)).await.unwrap();
 
         assert_eq!(result.location, "London");
-
-        let expected_datetime = Local.with_ymd_and_hms(2026, 1, 1, 12, 13, 0).unwrap();
 
         assert_eq!(
             result.datetime.with_timezone(&Utc),

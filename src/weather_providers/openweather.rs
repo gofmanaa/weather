@@ -1,6 +1,6 @@
 use crate::weather_providers::error::ProviderError;
 use crate::weather_providers::{WeatherData, WeatherProvider};
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use openweathermap::CurrentWeather;
 use tracing::debug;
 
@@ -48,7 +48,7 @@ impl WeatherProvider for OpenWeather {
     async fn fetch(
         &self,
         location: &str,
-        _date: Option<NaiveDate>,
+        _date: Option<NaiveDateTime>,
     ) -> Result<WeatherData, ProviderError> {
         let weather_response = self
             .get_weather(location)
