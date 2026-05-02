@@ -1,6 +1,7 @@
 use crate::config::Settings;
 use crate::errors::AppError;
 use crate::weather_providers::WeatherProvider;
+use crate::weather_providers::grib2provider::Grib2Provider;
 use crate::weather_providers::openweather::OpenWeather;
 use crate::weather_providers::weatherapi::WeatherApi;
 use std::{collections::HashMap, sync::Arc};
@@ -67,6 +68,12 @@ pub fn build_registry(settings: &Settings) -> Result<ProviderRegistry, AppError>
                 );
                 info!("WeatherApi registered");
             },
+            "grib" => {
+                let provider = Grib2Provider::new(settings.get_data_path(name));
+
+                registry.register(name, provider);
+                info!("Grib2Provider registered")
+            },
             _ => warn!("Provider `{}` in config is not implemented", name),
         }
     }
@@ -108,6 +115,7 @@ mod tests {
             })
         }
     }
+
     #[test]
     fn register_providers() {
         let mut reg = ProviderRegistry::new();
@@ -115,6 +123,7 @@ mod tests {
         reg.register("provider2", MockProvider {});
         assert_eq!(reg.providers.len(), 2);
     }
+
     #[test]
     fn lookup_missing_provider() {
         let reg = ProviderRegistry::new();

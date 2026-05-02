@@ -20,7 +20,7 @@ use tracing::{info, trace};
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    // add ratatui TUI
+    // TODO: add ratatui TUI
     let _logger_guard = init_logger();
     let _ = dotenvy::dotenv().ok();
     info!("App started");

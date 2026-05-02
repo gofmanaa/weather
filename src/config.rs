@@ -20,7 +20,8 @@ pub enum SettingsError {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProviderSettings {
-    pub api_key: String,
+    pub api_key: Option<String>,
+    pub data_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -35,8 +36,35 @@ impl Settings {
         if let Ok(key) = var(&env_var) {
             return Some(key);
         }
-        self.providers.get(provider_name).map(|p| p.api_key.clone())
+        if let Some(ps) = self.providers.get(provider_name) {
+            return ps.api_key.clone();
+        }
+        None
     }
+
+    pub fn get_data_path(&self, provider_name: &str) -> Option<PathBuf> {
+        if let Some(ps) = self.providers.get(provider_name) {
+            return ps.data_path.clone();
+        }
+        None
+    }
+}
+
+pub fn init_settings_file(config_path: &Path) -> io::Result<()> {
+    if !config_path.exists() {
+        fs::write(
+            config_path,
+            r#"default_provider = "weatherapi"
+
+[providers.weatherapi]
+api_key = "YourApiKey"
+
+[providers.openweather]
+api_key = "YourApiKey""#,
+        )?;
+    }
+
+    Ok(())
 }
 
 pub fn init_settings_file(config_path: &Path) -> io::Result<()> {
@@ -106,7 +134,8 @@ mod tests {
                     m.insert(
                         test_provider_name.to_string(),
                         ProviderSettings {
-                            api_key: "dummy".to_string(),
+                            api_key: Some("dummy".to_string()),
+                            data_path: None,
                         },
                     );
                     m
@@ -143,7 +172,8 @@ mod tests {
             providers.insert(
                 test_provider_name.to_string(),
                 ProviderSettings {
-                    api_key: "dummy_api_key".to_string(),
+                    api_key: Some("dummy_api_key".to_string()),
+                    data_path: None,
                 },
             );
             let settings = Settings {
@@ -156,7 +186,10 @@ mod tests {
             let s = load_settings(tmp_path).unwrap();
             assert_eq!(s.default_provider, test_provider_name);
             assert_eq!(s.providers.len(), 1);
-            assert_eq!(s.providers["test_openweather"].api_key, "dummy_api_key");
+            assert_eq!(
+                s.providers["test_openweather"].api_key,
+                Some("dummy_api_key".to_string())
+            );
 
             fs::remove_file(tmp_path).unwrap();
             fs::remove_file(env_path).unwrap();
@@ -182,7 +215,7 @@ mod tests {
         assert_eq!(s.providers.len(), 1);
         assert_eq!(
             s.providers["test_from_storage_provider"].api_key,
-            "dummy_api_key"
+            Some("dummy_api_key".to_string())
         );
 
         fs::remove_file(settings_path).unwrap();

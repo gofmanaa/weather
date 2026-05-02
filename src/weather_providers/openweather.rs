@@ -6,7 +6,7 @@ use tracing::debug;
 
 impl From<CurrentWeather> for WeatherData {
     fn from(w: CurrentWeather) -> Self {
-        let dt = DateTime::from_timestamp(w.dt, 0).map_or_else(Utc::now, |utc| utc);
+        let dt = DateTime::from_timestamp(w.dt, 0).unwrap_or(Utc::now());
 
         WeatherData {
             location: w.name,

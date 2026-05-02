@@ -3,13 +3,14 @@ use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use std::fmt::{Display, Formatter};
 
 pub mod error;
+pub mod grib2provider;
 pub mod openweather;
 pub mod weatherapi;
 
 use crate::weather_providers::error::ProviderError;
 
 /// Represents the weather information for a specific location.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct WeatherData {
     /// The name of the city or location.
     pub location: String,
