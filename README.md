@@ -13,6 +13,7 @@ Supports multiple weather providers, including:
 
 - OpenWeather
 - WeatherAPI
+- GRIB2
 
 ### Features
 

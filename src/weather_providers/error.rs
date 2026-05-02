@@ -22,4 +22,15 @@ pub enum ProviderError {
 
     #[error("Provider error '{0}'")]
     Error(String),
+
+    #[error("IO error")]
+    Io(std::io::Error),
+    #[error("parse error")]
+    Parse(String),
+    #[error("not found")]
+    NotFound,
+    #[error("Failed to download")]
+    Download(String),
+    #[error("Async join error")]
+    Join(tokio::task::JoinError),
 }

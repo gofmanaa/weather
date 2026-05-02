@@ -9,6 +9,7 @@ chrono = "0.4.42"
 clap = { version = "4.5.53", features = ["derive", "string"] }
 config = "0.15.19"
 dotenvy = "0.15.7"
+grib = "0.15.5"
 openweathermap = "0.2.4"
 reqwest = { version = "0.12.24", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
