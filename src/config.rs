@@ -67,6 +67,23 @@ api_key = "YourApiKey""#,
     Ok(())
 }
 
+pub fn init_settings_file(config_path: &Path) -> io::Result<()> {
+    if !config_path.exists() {
+        fs::write(
+            config_path,
+            r#"default_provider = "weatherapi"
+
+[providers.weatherapi]
+api_key = "YourApiKey"
+
+[providers.openweather]
+api_key = "YourApiKey""#,
+        )?;
+    }
+
+    Ok(())
+}
+
 pub fn load_settings(config_path: &Path) -> Result<Settings, SettingsError> {
     let mut builder = Config::builder();
 
