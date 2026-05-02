@@ -171,7 +171,7 @@ mod tests {
             assert_eq!(s.providers.len(), 1);
             assert_eq!(
                 s.providers["test_openweather"].api_key,
-                Some("dummy_api_key")
+                Some("dummy_api_key".to_string())
             );
 
             fs::remove_file(tmp_path).unwrap();
@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(s.providers.len(), 1);
         assert_eq!(
             s.providers["test_from_storage_provider"].api_key,
-            "dummy_api_key"
+            Some("dummy_api_key".to_string())
         );
 
         fs::remove_file(settings_path).unwrap();

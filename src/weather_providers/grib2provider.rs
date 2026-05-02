@@ -7,9 +7,9 @@ use std::{
     time::Duration,
 };
 
-use chrono::{NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, Timelike, Utc};
 use grib::{Grib2SubmessageDecoder, LatLons};
-use tracing::debug;
+use tracing::{debug, info};
 
 use crate::weather_providers::{WeatherData, WeatherProvider, error::ProviderError};
 
@@ -46,11 +46,12 @@ impl Grib2Provider {
         tokio::spawn(async move {
             if let Err(e) = update_cycle(&data_path.display().to_string()).await {
                 eprintln!("update error: {:?}", e);
+            } else {
+                is_ready
+                    .lock()
+                    .unwrap()
+                    .store(true, std::sync::atomic::Ordering::Relaxed);
             }
-            is_ready
-                .lock()
-                .unwrap()
-                .store(true, std::sync::atomic::Ordering::Relaxed);
         });
     }
 }
@@ -62,25 +63,33 @@ impl WeatherProvider for Grib2Provider {
         location: &str,
         _date: Option<NaiveDateTime>,
     ) -> Result<WeatherData, ProviderError> {
-        // 1. cache hit
-        if let Some(w_data) = self.cache.read().unwrap().get(location) {
-            return Ok(w_data.clone());
-        }
-
         while !self
             .state
             .lock()
             .unwrap()
             .load(std::sync::atomic::Ordering::Relaxed)
         {
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_secs(10)).await;
             break;
         }
-        // 2. fallback - read directly
-        let date = chrono::Utc::now().format("%Y%m%d").to_string();
+        info!("fetch");
 
-        let grib = format!("{}{date}000000-6h-oper-fc.grib2", self.data_path.display());
-        let index = format!("{}{date}000000-6h-oper-fc.index", self.data_path.display());
+        // 1. cache hit
+        if let Some(w_data) = self.cache.read().unwrap().get(location) {
+            return Ok(w_data.clone());
+        }
+        // 2. fallback - read directly
+
+        let grib = format!(
+            "{}{}.grib2",
+            self.data_path.display(),
+            build_enfo_file_name()
+        );
+        let index = format!(
+            "{}{}.index",
+            self.data_path.display(),
+            build_enfo_file_name()
+        );
 
         let loc = location.to_string();
         let data = tokio::task::spawn_blocking(move || extract_weather(&grib, &index, &loc))
@@ -112,22 +121,18 @@ async fn download_latest(data_path: &str) -> Result<(String, String), ProviderEr
     let date = chrono::Utc::now().format("%Y%m%d").to_string();
     let run = "00z";
 
-    let base = format!(
-        "s3://ecmwf-forecasts/{}/{}/aifs-single/0p25/oper/",
-        date, run
-    );
+    let base = format!("s3://ecmwf-forecasts/{}/{}/aifs-ens/0p25/enfo/", date, run);
 
-    let grib_file = format!("{data_path}{date}000000-6h-oper-fc.grib2");
-    let index_file = format!("{data_path}{date}000000-6h-oper-fc.index");
+    let grib_file = format!("{}{}.grib2", data_path, build_enfo_file_name());
+    let index_file = format!("{}{}.index", data_path, build_enfo_file_name());
 
-    let grib_s3 = format!("{base}{date}000000-6h-oper-fc.grib2");
-    let index_s3 = format!("{base}{date}000000-6h-oper-fc.index");
+    let grib_s3 = format!("{base}{}.grib2", build_enfo_file_name());
+    let index_s3 = format!("{base}{}.index", build_enfo_file_name());
 
     let grib_clone = grib_file.clone();
     let index_clone = index_file.clone();
 
     tokio::task::spawn_blocking(move || -> Result<(), ProviderError> {
-        // --- Download INDEX FIRST (small, safe)
         if !PathBuf::from(index_clone.clone()).exists() {
             debug!("Download index file from S3: {}", index_s3);
             let index_status = Command::new("aws")
@@ -139,9 +144,7 @@ async fn download_latest(data_path: &str) -> Result<(String, String), ProviderEr
                 return Err(ProviderError::Download("index download failed".into()));
             }
         }
-        // std::thread::sleep(std::time::Duration::from_secs(2));
 
-        // --- Retry GRIB download (handles SlowDown)
         if !PathBuf::from(grib_clone.clone()).exists() {
             debug!("Download grib2 file from S3: {}", grib_s3);
             let status = Command::new("aws")
@@ -261,6 +264,7 @@ fn extract_weather(
     })
 }
 
+#[allow(unused)]
 #[derive(Debug, serde::Deserialize)]
 struct IndexRecord {
     param: String,
@@ -349,22 +353,18 @@ fn geocode(location: &str) -> (f32, f32) {
     }
 }
 
-fn build_download_file_name() -> String {
+fn build_enfo_file_name() -> String {
     let now = Utc::now();
-    let mut date = now.date_naive();
-
-    let hour = date.hour();
-
+    let hour = now.hour();
     let run = match hour {
-        0..=5 => "00z",
-        6..=11 => "06z",
-        12..=17 => "12z",
-        _ => "18z",
+        0..=5 => "6h",
+        6..=11 => "12h",
+        12..=17 => "18h",
+        _ => "0h",
     };
     let date_str = now.format("%Y%m%d").to_string();
-    let step = 6;
 
-    let filename = format!("{}{}0000-{}h-oper-fc.grib2", date_str, run, step);
+    format!("{}000000-{}-enfo-cf", date_str, run)
 }
 
 #[cfg(test)]
@@ -372,7 +372,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn read_file() {
-        //assert!(r.is_ok());
+    fn file_name() {
+        // s3://ecmwf-forecasts/20260502/00z/aifs-ens/0p25/enfo/
+        // 2026-05-02 06:55:03   84945948 20260502000000-18h-enfo-cf.grib2
+        // 2026-05-02 06:55:03      23662 20260502000000-18h-enfo-cf.index
+        //
+        let f = build_enfo_file_name();
+        dbg!(f);
     }
 }
